@@ -11,11 +11,10 @@ from lib.common.general import id_card
 from lib.common.general import json_to_structure
 from lib.common.general import convert_to_numeric_str
 from lib.common.general import write_list_cards_to_file
-from lib.common.general import get_list_cards_from_file
 from lib.common.general import convert_to_lower_simple_chars
+from selenium.webdriver.common.by import By
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup as bs4
-from selenium.webdriver.remote.webelement import WebElement as TypeWebElement
 
 
 class URNs:
@@ -220,17 +219,17 @@ class TATNeft():
 
         try:
             elementStatus = None
-            for element in self.webBrowser.find_elements_by_class_name('field-md-dropdown'):
-                elementLabel = element.find_element_by_class_name(
-                    'field-md-dropdown__label')
+            for element in self.webBrowser.find_elements(By.CLASS_NAME, 'field-md-dropdown'):
+                elementLabel = element.find_element(
+                    By.CLASS_NAME, 'field-md-dropdown__label')
                 if convert_to_lower_simple_chars(elementLabel.text) == 'статускарты':
                     elementStatus = element
                     break
 
             openChangeCardForm = False
             if elementStatus:
-                elementStatusSpan = elementStatus.find_element_by_tag_name(
-                    'span')
+                elementStatusSpan = elementStatus.find_element(
+                    By.TAG_NAME, 'span')
                 if convert_to_lower_simple_chars(elementStatusSpan.text) == strStatus:
                     return Result(
                         ''.join([
@@ -242,11 +241,11 @@ class TATNeft():
                         True,
                         status)
                 else:
-                    elementDIV = self.webBrowser.find_element_by_class_name(
-                        'field-action-button--changeStatus')
+                    elementDIV = self.webBrowser.find_element(
+                        By.CLASS_NAME, 'field-action-button--changeStatus')
                     if elementDIV:
-                        elementSVG = elementDIV.find_element_by_tag_name(
-                            'td-svg-icon')
+                        elementSVG = elementDIV.find_element(
+                            By.TAG_NAME, 'td-svg-icon')
                         result = parsing.click_element(self, elementSVG)
                         if not result:
                             return result
@@ -265,8 +264,8 @@ class TATNeft():
         try:
             result = Result('Couldn\'t find the "status" check box')
 
-            elementList = self.webBrowser.find_element_by_class_name(
-                'field-md-dropdown-select')
+            elementList = self.webBrowser.find_element(
+                By.CLASS_NAME, 'field-md-dropdown-select')
             if elementList:
                 result = parsing.select_value_from_list(
                     self,
@@ -277,7 +276,7 @@ class TATNeft():
 
             if result:
                 buttonSave = None
-                for element in self.webBrowser.find_elements_by_tag_name('button'):
+                for element in self.webBrowser.find_elements(By.TAG_NAME, 'button'):
                     if convert_to_lower_simple_chars(element.text) == 'сохранить':
                         buttonSave = element
                         break
@@ -525,8 +524,8 @@ class TATNeft():
 
                 result = parsing.set_value_to_input(
                     self,
-                    (form.find_element_by_css_selector('div.dynamic-element--maxAmount').
-                        find_element_by_tag_name('input')),
+                    (form.find_element(By.CSS_SELECTOR, 'div.dynamic-element--maxAmount').
+                        find_element(By.TAG_NAME, 'input')),
                     value
                 )
                 if not result:
@@ -534,9 +533,9 @@ class TATNeft():
 
                 try:
                     field = None
-                    for elementGroup in form.find_elements_by_class_name('group__row'):
-                        elementsGroup = elementGroup.find_elements_by_class_name(
-                            'group__dynamic-element')
+                    for elementGroup in form.find_elements(By.CLASS_NAME, 'group__row'):
+                        elementsGroup = elementGroup.find_elements(
+                            By.CLASS_NAME, 'group__dynamic-element')
                         if elementsGroup:
                             dataField = elementsGroup[0].text.split('\n')
                             if dataField:
@@ -561,9 +560,9 @@ class TATNeft():
 
                 try:
                     field = None
-                    for elementGroup in form.find_elements_by_class_name('group__row'):
-                        elementsGroup = elementGroup.find_elements_by_class_name(
-                            'group__dynamic-element')
+                    for elementGroup in form.find_elements(By.CLASS_NAME, 'group__row'):
+                        elementsGroup = elementGroup.find_elements(
+                            By.CLASS_NAME, 'group__dynamic-element')
                         if elementsGroup:
                             dataField = elementsGroup[0].text.split('\n')
                             if dataField:
@@ -780,16 +779,16 @@ class TATNeft():
                 if indexLimit == -1:
                     return resultNotFound
 
-                wrapper = self.webBrowser.find_element_by_css_selector(
-                    'td-inline-group.group--limits')
+                wrapper = self.webBrowser.find_element(
+                    By.CSS_SELECTOR, 'td-inline-group.group--limits')
 
                 indexRow = -1
                 buttonRemove = None
-                for row in wrapper.find_elements_by_tag_name('mat-row'):
+                for row in wrapper.find_elements(By.TAG_NAME, 'mat-row'):
                     indexRow += 1
                     if indexRow == indexLimit:
-                        buttons = row.find_elements_by_css_selector(
-                            'div.table-row__action-btn')
+                        buttons = row.find_elements(
+                            By.CSS_SELECTOR, 'div.table-row__action-btn')
                         if buttons:
                             buttonRemove = buttons[1]
                             break
@@ -1004,16 +1003,16 @@ class TATNeft():
                 if indexLimit == -1:
                     return resultNotFound
 
-                wrapper = self.webBrowser.find_element_by_css_selector(
-                    'td-inline-group.group--limits')
+                wrapper = self.webBrowser.find_element(
+                    By.CSS_SELECTOR, 'td-inline-group.group--limits')
 
                 indexRow = -1
                 buttonEdit = None
-                for row in wrapper.find_elements_by_tag_name('mat-row'):
+                for row in wrapper.find_elements(By.TAG_NAME, 'mat-row'):
                     indexRow += 1
                     if indexRow == indexLimit:
-                        buttons = row.find_elements_by_css_selector(
-                            'div.table-row__action-btn')
+                        buttons = row.find_elements(
+                            By.CSS_SELECTOR, 'div.table-row__action-btn')
                         if buttons:
                             buttonEdit = buttons[0]
                             break
@@ -1037,8 +1036,8 @@ class TATNeft():
 
                 result = parsing.set_value_to_input(
                     self,
-                    (form.find_element_by_css_selector('div.dynamic-element--maxAmount').
-                        find_element_by_tag_name('input')),
+                    (form.find_element(By.CSS_SELECTOR, 'div.dynamic-element--maxAmount').
+                        find_element(By.TAG_NAME, 'input')),
                     value
                 )
                 if not result:
@@ -1261,8 +1260,8 @@ class TATNeft():
 
             totalLi = 0
             try:
-                elementsLi = self.webBrowser.find_elements_by_class_name(
-                    'page-link')
+                elementsLi = self.webBrowser.find_elements(
+                    By.CLASS_NAME, 'page-link')
                 for elementLi in elementsLi:
                     strNumberLi = convert_to_numeric_str(elementLi.text)
                     if strNumberLi:
@@ -1285,7 +1284,7 @@ class TATNeft():
                     time.sleep(2)
 
                 elementLi = None
-                for element in self.webBrowser.find_elements_by_class_name('page-link'):
+                for element in self.webBrowser.find_elements(By.CLASS_NAME, 'page-link'):
                     strNumberLi = convert_to_numeric_str(element.text)
                     if strNumberLi:
                         if int(strNumberLi) == counterLi:
@@ -1517,24 +1516,24 @@ class TATNeft():
         if not resultClick:
             return resultClick
 
-        formOrderReport = self.webBrowser.find_element_by_tag_name(
-            'mat-dialog-container')
-        elementList = formOrderReport.find_elements_by_class_name(
-            'field-md-dropdown-select')[1]
+        formOrderReport = self.webBrowser.find_element(
+            By.TAG_NAME, 'mat-dialog-container')
+        elementList = formOrderReport.find_elements(
+            By.CLASS_NAME, 'field-md-dropdown-select')[1]
         resultSelectList = parsing.select_value_from_list(
             self, elementList, 'mat-option', 'HTML')
         if not resultSelectList:
             return resultSelectList
 
-        elementList = formOrderReport.find_elements_by_class_name(
-            'field-md-dropdown-select')[0]
+        elementList = formOrderReport.find_elements(
+            By.CLASS_NAME, 'field-md-dropdown-select')[0]
         resultSelectList = parsing.select_value_from_list(
             self, elementList, 'mat-option', 'ТранзакцииПоКартамКонтракта')
         if not resultSelectList:
             return resultSelectList
 
-        elementsInput = formOrderReport.find_elements_by_class_name(
-            'field-date__input-field')
+        elementsInput = formOrderReport.find_elements(
+            By.CLASS_NAME, 'field-date__input-field')
         elementStartPeriod = elementsInput[0]
         elementEndPeriod = elementsInput[1]
 
@@ -1568,7 +1567,7 @@ class TATNeft():
             
             existSorts = False
             for element in (self.webBrowser.
-                            find_elements_by_tag_name('td-svg-icon')):
+                            find_elements(By.TAG_NAME, 'td-svg-icon')):
                 attrs = parsing.get_element_attributes(self, element)
                 if attrs:
                     if (attrs.data.get('icon')
@@ -1589,8 +1588,8 @@ class TATNeft():
                 time.sleep(1.5)
 
             try:
-                inputsDate = self.webBrowser.find_elements_by_class_name(
-                    'field-date__input-field')
+                inputsDate = self.webBrowser.find_elements(
+                    By.CLASS_NAME, 'field-date__input-field')
                 dateStart = timeOrderReport
                 dateEnd = timeOrderReport + timedelta(days=1)
                 parsing.set_value_to_input(
@@ -1598,9 +1597,9 @@ class TATNeft():
                 parsing.set_value_to_input(
                     self, inputsDate[1], dateEnd.strftime('%d.%m.%Y'))
 
-                divSearchButton = self.webBrowser.find_element_by_class_name(
-                    'field-action-button--applyFilter')
-                svgSearchButton = divSearchButton.find_element_by_tag_name('svg')
+                divSearchButton = self.webBrowser.find_element(
+                    By.CLASS_NAME, 'field-action-button--applyFilter')
+                svgSearchButton = divSearchButton.find_element(By.TAG_NAME, 'svg')
                 if svgSearchButton:
                     if not parsing.click_element(self, svgSearchButton):
                         continue
@@ -1612,12 +1611,12 @@ class TATNeft():
             time.sleep(2)
 
             try:
-                for row in self.webBrowser.find_elements_by_tag_name('mat-row'):
+                for row in self.webBrowser.find_elements(By.TAG_NAME, 'mat-row'):
                     if clickDownload:
                         break
                     minTime = timeOrderReport - timedelta(minutes=6)
                     maxTime = timeOrderReport + timedelta(minutes=6)
-                    cells = row.find_elements_by_tag_name('mat-cell')
+                    cells = row.find_elements(By.TAG_NAME, 'mat-cell')
                     if (cells[1].text.strip().lower() == 'html' and
                         cells[2].text.strip() == periodStart and
                         cells[3].text.strip() == periodEnd and
@@ -1625,7 +1624,7 @@ class TATNeft():
                         (datetime.strptime(cells[4].text.strip(), '%d.%m.%Y %H:%M') >= minTime and
                          datetime.strptime(cells[4].text.strip(), '%d.%m.%Y %H:%M') <= maxTime)):
 
-                        elementSVG = row.find_elements_by_tag_name('svg')[1]
+                        elementSVG = row.find_elements(By.TAG_NAME, 'svg')[1]
                         if elementSVG:
                             resultClick = parsing.click_element(
                                 self, elementSVG)
@@ -2023,8 +2022,8 @@ class TATNeft():
                 time.sleep(1)
 
             try:
-                foundForm = self.webBrowser.find_element_by_tag_name(
-                    'mat-dialog-container')
+                foundForm = self.webBrowser.find_element(
+                    By.TAG_NAME, 'mat-dialog-container')
                 if foundForm:
                     form = foundForm
                     break
@@ -2053,9 +2052,9 @@ class TATNeft():
 
             field = None
             try:
-                for elementGroup in form.find_elements_by_class_name('group__row'):
-                    elementsGroup = elementGroup.find_elements_by_class_name(
-                        'group__dynamic-element')
+                for elementGroup in form.find_elements(By.CLASS_NAME, 'group__row'):
+                    elementsGroup = elementGroup.find_elements(
+                        By.CLASS_NAME, 'group__dynamic-element')
                     if elementsGroup:
                         dataField = elementsGroup[0].text.split('\n')
                         if dataField:

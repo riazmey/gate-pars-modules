@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
 from lib.common.general import Result
-from lib.sites.tatneft import TATNeft
-from lib.sites.rosneft import RNCart
-from lib.sites.petrolplus import PetrolPlus
 import os.path
 import subprocess
 from sys import platform as nameOS
@@ -13,13 +10,13 @@ from seleniumwire import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webelement import WebElement as TypeWebElement
 from selenium.webdriver.chrome.webdriver import WebDriver as TypeWebDriver
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup as bs4
-from common.general import convert_to_lower_simple_chars
-from common.general import convert_to_numeric_str
-from common.general import id_card
-from common.general import json_to_structure
+from lib.common.general import convert_to_lower_simple_chars
+from lib.common.general import convert_to_numeric_str
+from lib.common.general import id_card
+from lib.common.general import json_to_structure
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent
 
 
@@ -79,13 +76,6 @@ def login(site: object,
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--no-sandbox")
-        #chrome_options.add_argument("--allow-profiles-outside-user-dir")
-        #chrome_options.add_argument("--enable-profile-shortcut-manager")
-        #chrome_options.add_argument("user-data-dir=C:\\Users\\i.radaev\\Documents\\gate_pars\\Profiles")
-        #chrome_options.add_argument("--profile-directory=ProfileUserData")
-        #chrome_options.add_extension("C:\\Users\\i.radaev\\Documents\\gate_pars\\proxy\\ProxyExtension2.zip")
-        #chrome_options.add_argument("--proxy-server=185.239.50.18:45785")
-        #chrome_options.add_argument("--proxy-server=Selriazmey:I9x3JrT@91.228.239.228:45785")
         chrome_options.add_argument(''.join([
             'user-agent=',
             UserAgent().chrome]))
@@ -121,10 +111,10 @@ def login(site: object,
 
     elementUsername = (site.
                        webBrowser.
-                       find_element_by_id(site.predefined_ID('userName')))
+                       find_element(By.ID, site.predefined_ID('userName')))
     elementPassword = (site.
                        webBrowser.
-                       find_element_by_id(site.predefined_ID('password')))
+                       find_element(By.ID, site.predefined_ID('password')))
 
     result = set_value_to_input(site, elementUsername, userName)
     if not result:
@@ -178,7 +168,7 @@ def find_element_by_tag_and_text(webBrowser: (TypeWebElement or
                       'correctly to the "find_element_by_tag_and_text"'
                       ' function')
 
-    foundElements = webBrowser.find_elements_by_tag_name(tagName)
+    foundElements = webBrowser.find_elements(By.TAG_NAME, tagName)
     searchText = text.strip().lower().replace(' ', '')
     for element in foundElements:
         if not isinstance(element, TypeWebElement):
@@ -217,7 +207,7 @@ def find_element_by_tag_and_class(webBrowser: (TypeWebElement or
                       ' function')
 
     for element in (webBrowser.
-                    find_elements_by_class_name(className)):
+                    find_elements(By.CLASS_NAME, className)):
         if element.tag_name == tagName:
             return Result('Successful', True, element)
 
@@ -250,7 +240,7 @@ def find_element_by_class_and_text(webBrowser: (TypeWebElement or
                       'function')
 
     searchText = text.strip().lower().replace(' ', '')
-    for element in webBrowser.find_elements_by_class_name(className):
+    for element in webBrowser.find_elements(By.CLASS_NAME, className):
         if not isinstance(element, TypeWebElement):
             continue
 
@@ -433,7 +423,7 @@ def select_value_from_list(site: object,
 
     if findID:
         try:
-            site.webBrowser.find_element_by_id(findID).click()
+            site.webBrowser.find_element(By.ID, findID).click()
             if webElement.text.strip().lower().replace(' ', ''):
                 return Result('Successful', True)
         except:
@@ -499,8 +489,8 @@ def open_main_section(site: object, nameSection: str) -> Result:
 
     foundElement = None
     for element in (site.webBrowser.
-                    find_element_by_class_name('nav-links-group').
-                    find_elements_by_tag_name('a')):
+                    find_element(By.CLASS_NAME, 'nav-links-group').
+                    find_elements(By.TAG_NAME, 'a')):
 
         if (element.text.strip().
                 lower().replace(' ', '')) == searchLinkText:
@@ -519,6 +509,10 @@ def open_main_section(site: object, nameSection: str) -> Result:
 
 def open_section_card_data(site: object, numberCard: str) -> Result:
 
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
+    from lib.sites.petrolplus import PetrolPlus
+
     if not site.loginOn:
         return Result('Error when executing the "open_section_card_data" '
                       'function: authorization failed')
@@ -532,6 +526,8 @@ def open_section_card_data(site: object, numberCard: str) -> Result:
         nameSite = 'tatneft'
     elif isinstance(site, RNCart):
         nameSite = 'rosneft'
+    elif isinstance(site, PetrolPlus):
+        nameSite = 'petrolplus'
     
     idCard = id_card(nameSite, site.siteLogin, numberCard)
     if idCard:
@@ -568,7 +564,7 @@ def open_section_card_data(site: object, numberCard: str) -> Result:
             return resultOpenSection
 
         elementInput = None
-        for element in site.webBrowser.find_elements_by_tag_name('input'):
+        for element in site.webBrowser.find_elements(By.TAG_NAME, 'input'):
             attributes = get_element_attributes(site, element)
             if not attributes:
                 continue
@@ -586,8 +582,8 @@ def open_section_card_data(site: object, numberCard: str) -> Result:
 
         elementSVG = (
             site.webBrowser.
-            find_element_by_class_name('params-filter-content.ng-star-inserted').
-            find_elements_by_tag_name('svg')[1]
+            find_element(By.CLASS_NAME, 'params-filter-content.ng-star-inserted').
+            find_elements(By.TAG_NAME, 'svg')[1]
         )
 
         for i in range(1, 5):
@@ -599,8 +595,8 @@ def open_section_card_data(site: object, numberCard: str) -> Result:
                 return resultClick
             else:
                 rowsTable = (
-                    site.webBrowser.find_element_by_tag_name('mat-table').
-                    find_elements_by_tag_name('mat-row')
+                    site.webBrowser.find_element(By.TAG_NAME,  'mat-table').
+                    find_elements(By.TAG_NAME, 'mat-row')
                 )
                 if len(rowsTable) != 1:
                     continue
@@ -614,21 +610,21 @@ def open_section_card_data(site: object, numberCard: str) -> Result:
 
             try:
                 rowsTable = (
-                    site.webBrowser.find_element_by_tag_name('mat-table').
-                    find_elements_by_tag_name('mat-row')
+                    site.webBrowser.find_element(By.TAG_NAME,  'mat-table').
+                    find_elements(By.TAG_NAME, 'mat-row')
                 )
 
                 if len(rowsTable) != 1:
                     continue
 
-                cellsRow = rowsTable[0].find_elements_by_tag_name('mat-cell')
+                cellsRow = rowsTable[0].find_elements(By.TAG_NAME, 'mat-cell')
                 if len(cellsRow) != 6:
                     continue
                 
                 del site.webBrowser.requests
                 resultClick = click_element(
                     site,
-                    cellsRow[0].find_elements_by_tag_name('a')[0]
+                    cellsRow[0].find_elements(By.TAG_NAME, 'a')[0]
                 )
 
                 if resultClick:
@@ -644,6 +640,9 @@ def open_section_card_data(site: object, numberCard: str) -> Result:
 
 
 def code_category(site: object, value:str) -> str:
+
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
 
     result = ''
     if isinstance(site, TATNeft):
@@ -667,6 +666,10 @@ def code_category(site: object, value:str) -> str:
 
 
 def code_currency(site: object, value:str) -> str:
+
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
+    from lib.sites.petrolplus import PetrolPlus
 
     result = ''
 
@@ -698,6 +701,10 @@ def code_currency(site: object, value:str) -> str:
 
 
 def code_period(site: object, value:str) -> str:
+
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
+    from lib.sites.petrolplus import PetrolPlus
 
     result = ''
 
@@ -736,6 +743,10 @@ def code_period(site: object, value:str) -> str:
 
 def code_status(site: object, value: str) -> str:
 
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
+    from lib.sites.petrolplus import PetrolPlus
+
     result = ''
 
     if not isinstance(value, str):
@@ -763,6 +774,10 @@ def code_status(site: object, value: str) -> str:
 
 def code_type_transaction(site: object, value: str) -> str:
     
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
+    from lib.sites.petrolplus import PetrolPlus
+
     if not isinstance(value, str):
         value = str(value)
 
@@ -794,6 +809,9 @@ def code_type_transaction(site: object, value: str) -> str:
 
 def repres_category(site: object, value:str) -> str:
 
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
+
     result = ''
     strValue = str(value).strip().lower()
     if isinstance(site, TATNeft):
@@ -816,6 +834,9 @@ def repres_category(site: object, value:str) -> str:
     return result
 
 def repres_period(site: object, value:str) -> str:
+
+    from lib.sites.tatneft import TATNeft
+    from lib.sites.rosneft import RNCart
 
     result = ''
     strValue = str(value).strip().lower()
@@ -840,6 +861,8 @@ def repres_period(site: object, value:str) -> str:
     return result
 
 def repres_currency(site: object, value:str) -> str:
+
+    from lib.sites.tatneft import TATNeft
 
     result = ''
     strValue = str(value).strip().lower()

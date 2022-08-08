@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import os
 import tempfile
 from lib.common import general
 from lib.common.general import Result
