@@ -1,3 +1,4 @@
-gate_pars_debug.py
+*debug*
 __pycache__/
 bin/
+data/

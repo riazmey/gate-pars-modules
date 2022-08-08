@@ -276,25 +276,28 @@ def write_list_cards_to_file(site:str, login:str, listCards:list) -> None:
             'login': login
         })
 
-    if os.path.exists('data_cards.json'):
+    if os.path.exists('data/cards.json'):
         jsonData = []
-        with open('data_cards.json', 'r', encoding='utf-8') as text:
+        with open('data/cards.json', 'r', encoding='utf-8') as text:
             jsonData = json.load(text)
 
         for data in jsonData:
             if data['site'] != site or data['login'] != login:
                 listCardsToWrite.append(data)
+    else:
+        if not os.path.isdir("data"):
+            os.mkdir("data")
     
-    with open('data_cards.json', 'w', encoding='utf-8') as jsonFile:
+    with open('data/cards.json', 'w', encoding='utf-8') as jsonFile:
         json.dump(listCardsToWrite, jsonFile)
 
 def get_list_cards_from_file(site:str, login:str) -> list:
 
     listCards = []
 
-    if os.path.exists('data_cards.json'):
+    if os.path.exists('data/cards.json'):
         jsonData = []
-        with open('data_cards.json', 'r', encoding='utf-8') as text:
+        with open('data/cards.json', 'r', encoding='utf-8') as text:
             jsonData = json.load(text)
 
         for data in jsonData:
