@@ -4,6 +4,7 @@ DIR_BASIC=$(dirname $(pwd))
 DIR_BIN="${DIR_BASIC}/bin"
 DIR_TMP="/tmp"
 
+mkdir -p "${DIR_BIN}"
 chrome_version=$(google-chrome --version | awk '{print $3}')
 
 rm -f "${DIR_TMP}/chromedriver"
