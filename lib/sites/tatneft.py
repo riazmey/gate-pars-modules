@@ -1765,11 +1765,11 @@ class TATNeft():
         }
 
         dataGetting = False
-        for i in range(1, 10):
+        for i in range(1, 5):
             if dataGetting:
                 break
             if i != 1:
-                time.sleep(0.3)
+                time.sleep(1.5)
 
             try:
                 cardID = id_card('tatneft', self.siteLogin, numberCard)
