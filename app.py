@@ -28,10 +28,14 @@ def api_get(nameFunction):
     
     startDate = datetime.now()
     nameSite = request.args.get('site')
-    getListTransactionsByReport = request.args.get('ByReport')
+    getListTransactionsByReportHTML = request.args.get('ByReportHTML')
+    getListTransactionsByReportXLS = request.args.get('ByReportXLS')
 
     if (nameFunction == 'getDataCards' or
-       (nameFunction == 'getListTransactions' and (nameSite == 'tatneft' and getListTransactionsByReport != 'true'))):
+        (nameFunction == 'getListTransactions' and
+            (nameSite == 'tatneft' and
+                getListTransactionsByReportHTML != 'true' and
+                getListTransactionsByReportXLS != 'true'))):
 
         if nameSite != 'tatneft':
             api_get('getListCards')
@@ -104,8 +108,12 @@ def api_get(nameFunction):
                         result = site.getDataCard(params['numberCard'])
                         
                     elif nameFunction == 'getListTransactions':
-                        if getListTransactionsByReport == 'true':
-                            result = site.getListTransactionsByReport(
+                        if getListTransactionsByReportHTML == 'true':
+                            result = site.getListTransactionsByReportHTML(
+                                params['periodStart'],
+                                params['periodEnd'])
+                        elif getListTransactionsByReportXLS == 'true':
+                            result = site.getListTransactionsByReportXLS(
                                 params['periodStart'],
                                 params['periodEnd'])
                         else:

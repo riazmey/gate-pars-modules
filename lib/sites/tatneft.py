@@ -5,6 +5,7 @@ import re
 import time
 import requests
 import json
+import openpyxl
 from lib.common import parsing
 from lib.common.general import Result
 from lib.common.general import id_card
@@ -1497,142 +1498,22 @@ class TATNeft():
             return Result(
                 'Couldn\'t get a data for fuel cards')
 
-    def getListTransactionsByReport(self, periodStart: str, periodEnd: str) -> Result:
+    def getListTransactionsByReportHTML(self, periodStart: str, periodEnd: str) -> Result:
 
         if not self.tempDir:
             return Result('The download file storage directory is not set')
 
-        successOrderReport = False
-        resultOpenSection = parsing.open_main_section(self, 'Отчетность')
-        if not resultOpenSection:
-            return resultOpenSection
+        formatReport = 'html'
+        nameReport = 'ТранзакцииПоКартамКонтракта'.lower()
 
-        resultFind = parsing.find_element_by_tag_and_text(
-            self.webBrowser, 'button', 'ЗаказатьОтчет')
-        if not resultFind:
-            return resultFind
+        resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 30, 3)
 
-        resultClick = parsing.click_element(self, resultFind.data)
-        if not resultClick:
-            return resultClick
-
-        formOrderReport = self.webBrowser.find_element(
-            By.TAG_NAME, 'mat-dialog-container')
-        elementList = formOrderReport.find_elements(
-            By.CLASS_NAME, 'field-md-dropdown-select')[1]
-        resultSelectList = parsing.select_value_from_list(
-            self, elementList, 'mat-option', 'HTML')
-        if not resultSelectList:
-            return resultSelectList
-
-        elementList = formOrderReport.find_elements(
-            By.CLASS_NAME, 'field-md-dropdown-select')[0]
-        resultSelectList = parsing.select_value_from_list(
-            self, elementList, 'mat-option', 'ТранзакцииПоКартамКонтракта')
-        if not resultSelectList:
-            return resultSelectList
-
-        elementsInput = formOrderReport.find_elements(
-            By.CLASS_NAME, 'field-date__input-field')
-        elementStartPeriod = elementsInput[0]
-        elementEndPeriod = elementsInput[1]
-
-        resultSetValue = parsing.set_value_to_input(
-            self, elementStartPeriod, periodStart)
-        if not resultSetValue:
-            return resultSetValue
-
-        resultSetValue = parsing.set_value_to_input(
-            self, elementEndPeriod, periodEnd)
-        if not resultSetValue:
-            return resultSetValue
-
-        resultFind = parsing.find_element_by_tag_and_text(
-            formOrderReport, 'button', 'Сохранить')
-        if resultFind:
-            if parsing.click_element(self, resultFind.data):
-                successOrderReport = True
-                time.sleep(1)
-
-        timeOrderReport = datetime.now()
-        if not successOrderReport:
-            return Result('')
-
-        if not parsing.open_main_section(self, 'Отчетность'):
-            return Result('')
-
-        for i in range(1, 5):
-            if i != 1:
-                time.sleep(0.5)
+        if not resultDownload:
             
-            existSorts = False
-            for element in (self.webBrowser.
-                            find_elements(By.TAG_NAME, 'td-svg-icon')):
-                attrs = parsing.get_element_attributes(self, element)
-                if attrs:
-                    if (attrs.data.get('icon')
-                            and attrs.data.get('icon') == 'down-arrow'):
-                        existSorts = True
-                        break
+            if self.orderReport(nameReport, formatReport, periodStart, periodEnd):
+                resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 4)
 
-            if existSorts:
-                parsing.click_element(self, element)
-            else:
-                break
-
-        clickDownload = False
-        for i in range(1, 15):
-            if clickDownload:
-                break
-            if i != 1:
-                time.sleep(1.5)
-
-            try:
-                inputsDate = self.webBrowser.find_elements(
-                    By.CLASS_NAME, 'field-date__input-field')
-                dateStart = timeOrderReport
-                dateEnd = timeOrderReport + timedelta(days=1)
-                parsing.set_value_to_input(
-                    self, inputsDate[0], dateStart.strftime('%d.%m.%Y'))
-                parsing.set_value_to_input(
-                    self, inputsDate[1], dateEnd.strftime('%d.%m.%Y'))
-
-                divSearchButton = self.webBrowser.find_element(
-                    By.CLASS_NAME, 'field-action-button--applyFilter')
-                svgSearchButton = divSearchButton.find_element(By.TAG_NAME, 'svg')
-                if svgSearchButton:
-                    if not parsing.click_element(self, svgSearchButton):
-                        continue
-                else:
-                    continue
-            except:
-                pass
-
-            time.sleep(2)
-
-            try:
-                for row in self.webBrowser.find_elements(By.TAG_NAME, 'mat-row'):
-                    if clickDownload:
-                        break
-                    minTime = timeOrderReport - timedelta(minutes=6)
-                    maxTime = timeOrderReport + timedelta(minutes=6)
-                    cells = row.find_elements(By.TAG_NAME, 'mat-cell')
-                    if (cells[1].text.strip().lower() == 'html' and
-                        cells[2].text.strip() == periodStart and
-                        cells[3].text.strip() == periodEnd and
-                        cells[4].text.strip() != '' and
-                        (datetime.strptime(cells[4].text.strip(), '%d.%m.%Y %H:%M') >= minTime and
-                         datetime.strptime(cells[4].text.strip(), '%d.%m.%Y %H:%M') <= maxTime)):
-
-                        elementSVG = row.find_elements(By.TAG_NAME, 'svg')[1]
-                        if elementSVG:
-                            resultClick = parsing.click_element(
-                                self, elementSVG)
-                            clickDownload = resultClick.status
-            except:
-                pass
-
-        if not clickDownload:
+        if not resultDownload:
             return Result('Failed to load transaction report file')
 
         downloadingFile = None
@@ -1727,6 +1608,103 @@ class TATNeft():
                             'discount': convert_to_numeric_str(0),
                             'items': items
                         })
+
+        return Result('Successful', True, listTransactions)
+
+    def getListTransactionsByReportXLS(self, periodStart: str, periodEnd: str) -> Result:
+
+        if not self.tempDir:
+            return Result('The download file storage directory is not set')
+
+        formatReport = 'xlsx'
+        nameReport = 'ТранзакцииЗаОтчётныйПериод(КакВРассылке)'.lower()
+        
+        resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 60, 3)
+
+        if not resultDownload:
+            
+            if self.orderReport(nameReport, formatReport, periodStart, periodEnd):
+                resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 4)
+
+        if not resultDownload:
+            return Result('Failed to load transaction report file')
+
+        downloadingFile = None
+        for i in range(1, 10):
+            time.sleep(1.5)
+            files = os.listdir(self.tempDir)
+            files = [os.path.join(self.tempDir, file) for file in files]
+            files = [file for file in files if os.path.isfile(file)]
+            if len(files) > 0:
+                downloadingFile = max(files, key=os.path.getctime)
+                if downloadingFile:
+                    break
+
+        if not downloadingFile:
+            return Result('Failed to load transaction report file')
+
+        listTransactions = []
+        woorkbook = openpyxl.load_workbook(downloadingFile)
+        worksheet = woorkbook.active
+
+        for row in worksheet.values:
+    
+            dataRow=tuple(row)
+
+            type = dataRow[20]
+
+            if type != 'покупка' and type != 'возврат':
+                continue
+
+            amount = float(dataRow[14])
+            amountWhithDiscont = float(dataRow[16])
+            amountDiscont = amount - amountWhithDiscont
+            price=dataRow[13]
+            priceWhithDiscont=dataRow[15]
+            quantity = float(dataRow[11])
+            address = ''
+            category = 'fuel'
+            categoryDescription = 'Нефтепродукты'
+
+            if isinstance(dataRow[5], str) and isinstance(dataRow[7], str) and isinstance(dataRow[8], str) and isinstance(dataRow[9], str):
+                address = ', '.join([dataRow[5], dataRow[7], dataRow[8], dataRow[9]])
+            
+            item=dataRow[10]
+            group=''
+            id=dataRow[22]
+            items = []
+
+            if amount >= 0:
+                typeTransaction = 'return'
+            else:
+                amount = amount * -1
+                typeTransaction = 'sale'
+
+            items.append({
+                'id': '',
+                'category': category,
+                'categoryDescription': categoryDescription,
+                'group': group,
+                'groupDescription': group,
+                'item': item,
+                'itemDescription': item,
+                'quantity': convert_to_numeric_str(quantity),
+                'price': convert_to_numeric_str(price),
+                'priceWithDiscount': convert_to_numeric_str(priceWhithDiscont),
+                'amount': convert_to_numeric_str(amount),
+                'amountWithDiscount': convert_to_numeric_str(amountWhithDiscont),
+            })
+
+            listTransactions.append({
+                'id': id,
+                'dateTime': dataRow[0].strftime('%Y-%m-%dT%H:%M:%S'),
+                'cardNumber': dataRow[1],
+                'type': typeTransaction,
+                'details': address,
+                'amount': convert_to_numeric_str(amount),
+                'discount': convert_to_numeric_str(amountDiscont),
+                'items': items
+            })
 
         return Result('Successful', True, listTransactions)
 
@@ -2210,5 +2188,135 @@ class TATNeft():
         )
 
         self.token = newToken if newToken else self.token
+
+        return result
+
+    def downloadReportIsExist(self, nameReport: str, formatReport: str, periodStart: str, periodEnd: str, inaccuracyMinuts: int, numberAttempts=7):
+
+        result = False
+        timeOrderReport = datetime.now()
+
+        if not parsing.open_main_section(self, 'Отчетность'):
+            return result
+
+        for i in range(1, 5):
+
+            if i != 1:
+                time.sleep(0.5)
+            
+            existSorts = False
+
+            for element in (self.webBrowser.find_elements(By.TAG_NAME, 'td-svg-icon')):
+
+                attrs = parsing.get_element_attributes(self, element)
+
+                if attrs:
+                    if (attrs.data.get('icon') and attrs.data.get('icon') == 'down-arrow'):
+                        existSorts = True
+                        break
+
+            if existSorts:
+                parsing.click_element(self, element)
+            else:
+                break
+
+        for i in range(1, numberAttempts):
+
+            if result:
+                break
+            if i != 1:
+                time.sleep(1.5)
+
+            try:
+
+                inputsDate = self.webBrowser.find_elements(By.CLASS_NAME, 'field-date__input-field')
+                dateStart = timeOrderReport
+                dateEnd = timeOrderReport + timedelta(days=1)
+                parsing.set_value_to_input(self, inputsDate[0], dateStart.strftime('%d.%m.%Y'))
+                parsing.set_value_to_input(self, inputsDate[1], dateEnd.strftime('%d.%m.%Y'))
+
+                divSearchButton = self.webBrowser.find_element(By.CLASS_NAME, 'field-action-button--applyFilter')
+                svgSearchButton = divSearchButton.find_element(By.TAG_NAME, 'svg')
+
+                if svgSearchButton:
+                    if not parsing.click_element(self, svgSearchButton):
+                        continue
+                else:
+                    continue
+                
+            except:
+                pass
+
+            time.sleep(2)
+
+            try:
+                for row in self.webBrowser.find_elements(By.TAG_NAME, 'mat-row'):
+
+                    if result:
+                        break
+
+                    minTime = timeOrderReport - timedelta(minutes=inaccuracyMinuts)
+                    maxTime = timeOrderReport + timedelta(minutes=inaccuracyMinuts)
+                    cells = row.find_elements(By.TAG_NAME, 'mat-cell')
+                    nameReportInTable = cells[0].text.strip().lower().replace(' ', '')
+
+                    if (nameReportInTable == nameReport and
+                        cells[1].text.strip().lower() == formatReport and
+                        cells[2].text.strip() == periodStart and
+                        cells[3].text.strip() == periodEnd and
+                        cells[4].text.strip() != '' and
+                        (datetime.strptime(cells[4].text.strip(), '%d.%m.%Y %H:%M') >= minTime and
+                         datetime.strptime(cells[4].text.strip(), '%d.%m.%Y %H:%M') <= maxTime)):
+
+                        elementSVG = row.find_elements(By.TAG_NAME, 'svg')[1]
+                        if elementSVG:
+                            resultClick = parsing.click_element(
+                                self, elementSVG)
+                            result = resultClick.status
+            except:
+                pass
+
+        return result
+
+    def orderReport(self, nameReport: str, formatReport: str, periodStart: str, periodEnd: str):
+        
+        result = False
+
+        if not parsing.open_main_section(self, 'Отчетность'):
+            return result
+
+        resultFind = parsing.find_element_by_tag_and_text(self.webBrowser, 'button', 'ЗаказатьОтчет')
+        if resultFind:
+            if not parsing.click_element(self, resultFind.data):
+                return result
+        else:
+            return result
+
+        formOrderReport = self.webBrowser.find_element(By.TAG_NAME, 'mat-dialog-container')
+
+        elementList = formOrderReport.find_elements(By.CLASS_NAME, 'field-md-dropdown-select')[1]
+        if not parsing.select_value_from_list(self, elementList, 'mat-option', formatReport):
+            return result
+
+        elementList = formOrderReport.find_elements(By.CLASS_NAME, 'field-md-dropdown-select')[0]
+        if not parsing.select_value_from_list(self, elementList, 'mat-option', nameReport):
+            return result
+
+        elementsInput = formOrderReport.find_elements(By.CLASS_NAME, 'field-date__input-field')
+        elementStartPeriod = elementsInput[0]
+        elementEndPeriod = elementsInput[1]
+
+        if not parsing.set_value_to_input(self, elementStartPeriod, periodStart):
+            return result
+        
+        if not parsing.set_value_to_input(self, elementEndPeriod, periodEnd):
+            return result
+
+        resultFind = parsing.find_element_by_tag_and_text(formOrderReport, 'button', 'Сохранить')
+        
+        if resultFind:
+            if parsing.click_element(self, resultFind.data):
+                time.sleep(1)
+                result = True
 
         return result
