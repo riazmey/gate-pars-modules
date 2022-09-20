@@ -973,6 +973,7 @@ class TATNeft():
     def editLimitCardBySelenium(self, numberCard: str, idLimit: str, value: str) -> Result:
 
         for i in range(1, 10):
+            
             if i != 1:
                 time.sleep(1)
 
@@ -1063,13 +1064,16 @@ class TATNeft():
         return Result('Couldn\'t delete a limit')
 
     def getBalance(self) -> Result:
+        
         functions = {
             'function1': self.getBalanceBySiteAPI,
             'function2': self.getBalanceBySelenium
         }
+
         for function in functions:
             result = functions[function]()
             if result: break
+            
         return result
 
     def getBalanceBySiteAPI(self) -> Result:
@@ -1080,16 +1084,15 @@ class TATNeft():
             'available': 0.0
         }
 
-        result = Result(
-            'Couldn\'t get the balance',
-            False,
-            data
-        )
+        result = Result('Couldn\'t get the balance', False, data)
 
-        for i in range(1, 10):
-            if i != 1:
+        for attemptCounter in range(1, 10):
+
+            if attemptCounter != 1:
                 time.sleep(0.3)
+            
             try:
+
                 response = self.send_request(
                     'api/util/loadData/tnp.mainData')
                 if not response.status_code == 200:
@@ -1112,6 +1115,7 @@ class TATNeft():
 
                 self.send_request('api/util/loadData/tnp.mainData')
                 break
+
             except:
                 pass
 
@@ -1125,20 +1129,18 @@ class TATNeft():
             'available': 0.0
         }
 
-        result = Result(
-            'Couldn\'t get the balance',
-            False,
-            data
-        )
+        result = Result('Couldn\'t get the balance', False, data)
 
-        for i in range(1, 50):
-            if i != 1:
+        for attemptCounter in range(1, 50):
+
+            if attemptCounter != 1:
                 time.sleep(0.3)
+            
             try:
+
                 entries = parsing.find_requests(
                     self,
-                    uri='api/util/loadData/tnp.menuData'
-                )
+                    uri='api/util/loadData/tnp.menuData')
 
                 if not entries:
                     continue
@@ -1149,82 +1151,99 @@ class TATNeft():
                 data['balance'] = jsonData['data']['balance']
 
                 if jsonData:
+
                     result = Result(
                         'Successful',
                         True,
-                        data
-                    )
+                        data)
+
                     break
+            
             except:
                 pass
         
         return result
 
     def getListCards(self) -> Result:
+
         functions = {
             'function1': self.getListCardsBySiteAPI,
             'function2': self.getListCardsBySelenium
         }
+
         for function in functions:
             result = functions[function]()
             if result: break
+        
         return result
     
     def getListCardsBySiteAPI(self) -> Result:
 
         listCards = []
-        result = Result(
-            'Couldn\'t get the list cards',
-            False,
-            listCards
-        )
+        result = Result('Couldn\'t get the list cards', False, listCards)
 
-        for i in range(1, 10):
-            if i != 1:
-                time.sleep(0.3)
-            try:
-                response = self.send_request(
-                    'api/util/loadData/tnp.cardsData')
-                if not response.status_code == 200:
-                    continue
+        dataIsAvailable = True
+        requestCounter=0
 
-                response = self.send_request(
-                    'api/data/customerCardList/tnp.cardsData/$all',
-                    json.dumps(
-                        {
-                            'pager': {
-                                'page': 1,
-                                'pageSize': 10000
-                            }
-                        }
-                    )
-                )
-                if not response.status_code == 200:
-                    continue
+        while dataIsAvailable:
+            
+            requestCounter += 1
 
-                jsonData = json_to_structure(response.text)
-                if not 'data' in jsonData:
-                    continue
+            for attemptCounter in range(1, 10):
 
-                for data in jsonData['data']:
-                    listCards.append(
-                        {
-                            'id': str(data['id']),
-                            'number': data['cardNumber'],
-                            'status': parsing.code_status(self, data['status'])
-                        }
-                    )
+                if attemptCounter != 1:
+                    time.sleep(0.3)
                 
-                result = Result(
-                    'Successfull',
-                    True,
-                    listCards
-                )
+                try:
+                    response = self.send_request(
+                        'api/util/loadData/tnp.cardsData')
+                    if not response.status_code == 200:
+                        continue
 
-                self.send_request('api/util/loadData/tnp.mainData')
-                break
-            except:
-                pass
+                    response = self.send_request(
+                        'api/data/customerCardList/tnp.cardsData/$all',
+                        json.dumps(
+                            {
+                                'pager': {
+                                    'page': requestCounter,
+                                    'pageSize': 99
+                                }
+                            }
+                        )
+                    )
+
+                    if not response.status_code == 200:
+                        continue
+
+                    jsonData = json_to_structure(response.text)
+                    if not 'data' in jsonData:
+                        continue
+                    
+                    if len( jsonData['data'] ) == 0:
+                        dataIsAvailable = False
+                        break
+
+                    for data in jsonData['data']:
+                        listCards.append(
+                            {
+                                'id': str(data['id']),
+                                'number': data['cardNumber'],
+                                'status': parsing.code_status(self, data['status'])
+                            }
+                        )
+                    
+                    result = Result(
+                        'Successfull',
+                        True,
+                        listCards
+                    )
+
+                    self.send_request('api/util/loadData/tnp.mainData')
+                    
+                    break
+
+                except:
+                    pass
 
         if listCards:
             write_list_cards_to_file(
