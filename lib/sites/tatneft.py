@@ -1525,7 +1525,7 @@ class TATNeft():
         formatReport = 'html'
         nameReport = 'ТранзакцииПоКартамКонтракта'.lower()
 
-        resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 30, 3)
+        resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 30, 5)
 
         if not resultDownload:
             
@@ -1638,7 +1638,7 @@ class TATNeft():
         formatReport = 'xlsx'
         nameReport = 'ТранзакцииЗаОтчётныйПериод(КакВРассылке)'.lower()
         
-        resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 60, 3)
+        resultDownload = self.downloadReportIsExist(nameReport, formatReport, periodStart, periodEnd, 60, 5)
 
         if not resultDownload:
             
