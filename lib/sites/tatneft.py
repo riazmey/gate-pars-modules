@@ -2221,7 +2221,7 @@ class TATNeft():
         for i in range(1, 5):
 
             if i != 1:
-                time.sleep(0.5)
+                time.sleep(2)
             
             existSorts = False
 

@@ -220,7 +220,7 @@ class PetrolPlus():
                         continue
                     if limit.get('lim') == 999999:
                         continue
-                    newLimit['value'] = newLimit.get('value') + limit.get('lim')
+                    newLimit['value'] = float(newLimit.get('value')) + float(limit.get('lim'))
                 
                 newLimit['value'] = convert_to_numeric_str(newLimit['value'])
                 newLimit['balance'] = convert_to_numeric_str(newLimit['balance'])
